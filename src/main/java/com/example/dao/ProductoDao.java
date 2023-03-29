@@ -43,7 +43,7 @@ public interface ProductoDao extends JpaRepository<Producto, Long> {
       *       El metodo siguiente recupera un producto por el id
       */
      @Query(value = "select p from Producto p left join fetch p.presentacion where p.id = :id")
-      public List<Producto> findById(long id);
+      public Producto findById(long id);
 
 
 
