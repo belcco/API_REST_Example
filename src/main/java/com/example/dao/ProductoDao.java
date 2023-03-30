@@ -2,8 +2,8 @@ package com.example.dao;
 
 import java.util.List;
 
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,7 +34,7 @@ public interface ProductoDao extends JpaRepository<Producto, Long> {
      */
 
      @Query(value = "select p from Producto p left join fetch p.presentacion", 
-            countQuery = "select count(p) from Producto p left join p.preentacion")
+            countQuery = "select count(p) from Producto p left join p.presentacion")
 
      public Page<Producto> findAll(Pageable pageable);
 

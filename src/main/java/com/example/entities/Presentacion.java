@@ -3,6 +3,8 @@ package com.example.entities;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,6 +33,7 @@ private String nombre;
 private String descripcion;
 
 @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST, mappedBy = "presentacion")
+@JsonIgnore
 private List<Producto> productos;
 
 

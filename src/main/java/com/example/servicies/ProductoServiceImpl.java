@@ -49,6 +49,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public void delete(Producto producto) {
+        productoDao.delete(producto);
         
     }
     
