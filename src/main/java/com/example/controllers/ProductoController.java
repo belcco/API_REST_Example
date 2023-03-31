@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.entities.Producto;
 import com.example.servicies.ProductoService;
@@ -170,9 +171,18 @@ public class ProductoController {
        *    ver los errores de la validación).
        */
 
-       @PostMapping
+       // Guardar (Persistir), un producto, con su presentacion en la base de datos
+    // Para probarlo con POSTMAN: Body -> form-data -> producto -> CONTENT TYPE ->
+    // application/json
+    // no se puede dejar el content type en Auto, porque de lo contrario asume
+    // application/octet-stream
+    // y genera una exception MediaTypeNotSupported
+
+       @PostMapping(consumes = "multipart/home-data")
        @Transactional
-       public ResponseEntity<Map<String,Object>> insert(@Valid @RequestBody Producto producto, BindingResult result) {
+       public ResponseEntity<Map<String,Object>> insert(
+        @Valid @RequestBody Producto producto, BindingResult result,
+        @RequestParam(name = "file")MultipartFile file) {
 
         Map<String, Object> responseAsMap = new HashMap<>();
         ResponseEntity<Map<String,Object>> responseEntity = null;
