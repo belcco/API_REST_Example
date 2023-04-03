@@ -1,5 +1,6 @@
 package com.example.controllers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,11 +24,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.entities.Producto;
 import com.example.servicies.ProductoService;
+import com.example.utilities.FileUploadUtil;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -54,6 +57,9 @@ public class ProductoController {
 
      @Autowired
      private ProductoService productoService;
+
+     @Autowired
+     private FileUploadUtil fileUploadUtil;
 
      // El responseEntity es una entidad de respuesta, dentro del diamante lleva lo que quieres que responda.
      // En este caso la respuesta es una lista de productos y la confirmación.
@@ -169,6 +175,7 @@ public class ProductoController {
        *    validar que los produtos cumplen con las condiciones para devolver el producto. 
        *    Hay que añadir un método BindingResult y reflejarlo en una variable que la llamamos result (esto te permite
        *    ver los errores de la validación).
+     * @throws IOException
        */
 
        // Guardar (Persistir), un producto, con su presentacion en la base de datos
@@ -178,11 +185,14 @@ public class ProductoController {
     // application/octet-stream
     // y genera una exception MediaTypeNotSupported
 
-       @PostMapping(consumes = "multipart/home-data")
+       @PostMapping(consumes = "multipart/form-data")
        @Transactional
+       
        public ResponseEntity<Map<String,Object>> insert(
-        @Valid @RequestBody Producto producto, BindingResult result,
-        @RequestParam(name = "file")MultipartFile file) {
+        @Valid 
+        @RequestPart(name = "producto") Producto producto, 
+        BindingResult result,
+        @RequestPart(name = "file") MultipartFile file) throws IOException {
 
         Map<String, Object> responseAsMap = new HashMap<>();
         ResponseEntity<Map<String,Object>> responseEntity = null;
@@ -205,6 +215,13 @@ public class ProductoController {
             responseEntity = new ResponseEntity<Map<String,Object>>(responseAsMap, HttpStatus.BAD_REQUEST);
             return responseEntity;
          }
+
+         if(!file.isEmpty()) {
+                String fileCode = fileUploadUtil.saveFile(file.getOriginalFilename(), file);
+                producto.setImagenProducto(fileCode+"-"+file.getOriginalFilename());
+         }
+
+
 
          // Si no hay errores, guardamos el producto en lqa base de datos (persistimos el producto).
          
