@@ -7,12 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -29,11 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.entities.Producto;
+import com.example.model.FileUploadResponse;
 import com.example.servicies.ProductoService;
+import com.example.utilities.FileDownloadUtil;
 import com.example.utilities.FileUploadUtil;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  *  ANOTACIÓN DE LA API RES: hace que los métodos que ponemos a continuación devuelvan un json.
@@ -46,6 +52,11 @@ import jakarta.validation.Valid;
  *  Todas las peticiones son productos, en dependencia de como las haces (post - guarda un protucto, set - introduce datos, etc.)
  */
 @RequestMapping("/productos")
+
+// INTECTAR DEPENDENCIAS POR CONSTRUCTOR.
+// Anotación que inicializa el objeto (en este caso fileuploadUtil).
+@RequiredArgsConstructor
+
 public class ProductoController {
 
     /**
@@ -60,6 +71,10 @@ public class ProductoController {
 
      @Autowired
      private FileUploadUtil fileUploadUtil;
+
+     // La siguiente dependencia se inyecta por constuctor, en lugar de por autowired. 
+     // Hay que declarar la dependencia de la misma forma pero final.
+     private final FileDownloadUtil fileDownloadUtil;
 
      // El responseEntity es una entidad de respuesta, dentro del diamante lleva lo que quieres que responda.
      // En este caso la respuesta es una lista de productos y la confirmación.
@@ -219,9 +234,21 @@ public class ProductoController {
          if(!file.isEmpty()) {
                 String fileCode = fileUploadUtil.saveFile(file.getOriginalFilename(), file);
                 producto.setImagenProducto(fileCode+"-"+file.getOriginalFilename());
+         
+
+            // Devolver informacion respecto al file recibido. 
+            FileUploadResponse fileUploadResponse = FileUploadResponse
+                        .builder()
+                        .fileName(fileCode + "-" + file.getOriginalFilename())
+                        .downloadURI("/productos/downloadFile/" + fileCode + "-" + file.getOriginalFilename())
+                        .size(file.getSize())
+                        .build();
+            
+             responseAsMap.put("info de la imagen: ", fileUploadResponse);
+
          }
 
-
+        
 
          // Si no hay errores, guardamos el producto en lqa base de datos (persistimos el producto).
          
@@ -356,6 +383,35 @@ public class ProductoController {
 
     }
 
+      /**
+     *  Implementa filedownnload end point API 
+     **/    
+
+     
+    @GetMapping("/downloadFile/{fileCode}")
+    public ResponseEntity<?> downloadFile(@PathVariable(name = "fileCode") String fileCode) {
+
+        Resource resource = null;
+
+        try {
+            resource = fileDownloadUtil.getFileAsResource(fileCode);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+
+        if (resource == null) {
+            return new ResponseEntity<>("File not found ", HttpStatus.NOT_FOUND);
+        }
+
+        String contentType = "application/octet-stream";
+        String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
+
+        return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(contentType))
+        .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+        .body(resource);
+
+    }
 
 
 
@@ -368,5 +424,6 @@ public class ProductoController {
     //     List<String> nombres = Arrays.asList("Salma", "Judith", "Elisabeth");
     //     return nombres;
     //  }
+
     
 }
